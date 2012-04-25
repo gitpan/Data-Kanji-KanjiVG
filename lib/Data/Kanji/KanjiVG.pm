@@ -4,7 +4,7 @@ require Exporter;
 @EXPORT_OK = qw/parse/;
 use warnings;
 use strict;
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 use XML::Parser::Expat;
 use Carp;
 use Image::SVG::Path 'extract_path_info';

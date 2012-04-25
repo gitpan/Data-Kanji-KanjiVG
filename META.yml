@@ -23,4 +23,4 @@ requires:
 resources:
   bugtracker: https://github.com/benkasminbullock/Data-Kanji-KanjiVG/issues
   repository: https://github.com/benkasminbullock/Data-Kanji-KanjiVG
-version: 0.03
+version: 0.04
