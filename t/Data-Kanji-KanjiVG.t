@@ -47,6 +47,13 @@ parse (
     flatten => 1,
 );
 
+parse (
+    xml => $xml,
+    callback => \& svg_callback,
+    callback_data => $cbd,
+    parse_svg => 1,
+);
+
 done_testing ();
 
 #parse (
@@ -55,6 +62,22 @@ done_testing ();
 #);
 
 exit;
+
+sub svg_callback
+{
+    my ($callback_data, $parsed_svg) = @_;
+    ok ($callback_data eq $cbd, "Callback data OK");
+    for my $path (@$parsed_svg) {
+        for my $curve (@$path) {
+            my $type = $curve->{type};
+            ok (defined $type);
+            # Check that everything is "absolute" not relative and not
+            # shortcut.
+            ok ($curve->{position} eq 'absolute');
+            ok ($type eq 'cubic-bezier' || $type eq 'moveto');
+        }
+    }
+}
 
 sub flat_callback
 {

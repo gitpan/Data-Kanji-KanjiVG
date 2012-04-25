@@ -1,102 +1,13 @@
-=head1 NAME
-
-Data::Kanji::KanjiVG - parse KanjiVG kanji data.
-
-=cut
 package Data::Kanji::KanjiVG;
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw/parse/;
 use warnings;
 use strict;
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 use XML::Parser::Expat;
 use Carp;
-
-=head2 parse
-
-    parse (
-        file_name => $file_name,
-        callback => $callback,
-        callback_data => $callback_data,
-    );
-
-Parse the file specified by C<$file_name>. As a complete piece of
-kanji data is achieved, call C<$callback> in the following form:
-
-    &{$callback} ($callback_data, $kanji);
-
-Possible arguments are
-
-=over
-
-=item file_name
-
-Give the name of the file to parse.
-
-=item callback
-
-Give a function to call back each time a complete piece of kanji
-information is parsed.
-
-=item callback_data
-
-An optional piece of data to pass to the callback function.
-
-=item flatten
-
-A boolean. If it is false (or if it is omitted), the kanji information
-is sent as a complete hash reference. If it is true, the kanji
-information is sent as an array reference containing the paths.
-
-=back
-
-If the data is not flattened using C<flatten>, C<$kanji> is a hash
-reference containing the following fields:
-
-=over
-
-=item id
-
-The identification number of the kanji.
-
-=item g
-
-A group of strokes of the kanji. This contains the following sub-fields:
-
-=over
-
-=item paths
-
-An array reference to strokes or groups of strokes. Each element
-contains its type and attributes.
-
-=back
-
-=back
-
-Each path is a single stroke of the kanji. This hash reference contains the
-following sub-fields:
-
-=over
-
-=item id
-
-The stroke's identification number.
-
-=item type
-
-The type of the stroke, a field describing the general shape of the
-stroke.
-
-=item d
-
-The SVG path information. This information is a string. To parse it,
-the module L<Image::SVG::Path> may be useful.
-
-=back
-
-=cut
+use Image::SVG::Path 'extract_path_info';
 
 sub parse
 {
@@ -111,6 +22,10 @@ sub parse
         $kanjis{callback_data} = $inputs{callback_data};
     }
     $kanjis{flatten} = $inputs{flatten};
+    $kanjis{parse_svg} = $inputs{parse_svg};
+    if ($kanjis{parse_svg}) {
+        $kanjis{flatten} = 1;
+    }
     $kanjis{kanji} = {};
     my $p = XML::Parser::Expat->new ();
     $p->setHandlers (
@@ -197,7 +112,16 @@ sub end
             my $flatten = $kanjis->{flatten};
             if ($flatten) {
                 my $flattened = flatten ($kanji);
-                &{$callback} ($kanjis->{callback_data}, $flattened);
+                if ($kanjis->{parse_svg}) {
+                    my $parsed_svg = parse_svg ($flattened);
+                    if (ref $parsed_svg ne 'ARRAY') {
+                        die "Not an array reference";
+                    }
+                    &{$callback} ($kanjis->{callback_data}, $parsed_svg);
+                }
+                else {
+                    &{$callback} ($kanjis->{callback_data}, $flattened);
+                }
             }
             else {
                 &{$callback} ($kanjis->{callback_data}, $kanji);
@@ -218,6 +142,34 @@ sub end
     else {
         warn "Unknown closing element '$element'";
     }
+}
+
+# Parse the SVG paths into a more useable format.
+
+sub parse_svg
+{
+    my ($flattened) = @_;
+    my @parsed_svg;
+    if (! @$flattened) {
+        croak "Empty list of paths";
+    }
+    for my $element (@$flattened) {
+        my $id = $element->{id};
+        my $d = $element->{d};
+        if (!$d) {
+            croak "Element '$id' has no 'd' attribute";
+        }
+        my @parsed = extract_path_info ($d, {
+            absolute => 1,
+            no_shortcuts => 1,
+        });
+        if (! @parsed) {
+            croak "Path '$d' is empty";
+        }
+        push @parsed_svg, \@parsed;
+    }
+    print "Parsed SVG: @parsed_svg\n";
+    return \@parsed_svg;
 }
 
 # Turn the structure of hash references into a single array containing
@@ -250,3 +202,4 @@ sub follow
 }
 
 1;
+

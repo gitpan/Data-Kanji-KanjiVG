@@ -32,6 +32,7 @@
       },
       "runtime" : {
          "requires" : {
+            "Image::SVG::Path" : "0.06",
             "XML::Parser" : "0"
          }
       }
@@ -45,5 +46,5 @@
          "url" : "https://github.com/benkasminbullock/Data-Kanji-KanjiVG"
       }
    },
-   "version" : "0.02"
+   "version" : "0.03"
 }

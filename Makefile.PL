@@ -2,18 +2,23 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
-my $pm = 'lib/Data/Kanji/KanjiVG.pm';
-my $repo = 'https://github.com/benkasminbullock/Data-Kanji-KanjiVG';
+my $name = 'Data::Kanji::KanjiVG';
+my $pm = "lib/$name.pm";
+$pm =~ s!::!/!g;
+my $pod = $pm;
+$pod =~ s!\.pm$!.pod!;
+my $repo = "https://github.com/benkasminbullock/$name";
+$repo =~ s!::!-!g;
 
 WriteMakefile (
-    NAME => 'Data::Kanji::KanjiVG',
+    NAME => $name,
     VERSION_FROM => $pm,
-    ABSTRACT_FROM => $pm,
+    ABSTRACT_FROM => $pod,
     AUTHOR => 'Ben Bullock <bkb@cpan.org>',
     LICENSE => 'perl',
     PREREQ_PM => {
         'XML::Parser' => '0',
-#        'Image::SVG::Path' => '0.06',
+        'Image::SVG::Path' => '0.06',
     },
     META_MERGE => {
         resources => {
